@@ -16,6 +16,29 @@ const authRouter = express.Router();
 const authValidations = [validateEmail, validatePassword];
 
 const authMiddlewares = validateBody(authValidations);
+
+/**
+ * @swagger
+ * /auth:
+ *   post:
+ *     description: Login to the application
+ *     produces:
+ *       - application/json
+ *     body:
+ *       - email: email
+ *         description: User's email to use for auth.
+ *         in: formData
+ *         required: true
+ *         type: string
+ *       - name: password
+ *         description: User's password.
+ *         in: formData
+ *         required: true
+ *         type: string
+ *     responses:
+ *       200:
+ *         description: auth
+ */
 authRouter.post('/', authMiddlewares, authUser);
 
 const registerValidations = authValidations.concat(validateUniqueEmail);

@@ -4,6 +4,9 @@ import logger from 'morgan';
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import swaggerJsDoc from 'swagger-jsdoc';
+import swaggerUI from 'swagger-ui-express';
+import swaggerOptions from './swagger';
 import { setEnvVariables } from './utils/envUtil';
 import indexRouter from './routes';
 import apiRouter from './router';
@@ -12,6 +15,10 @@ import errorHandler from './middlewares/common/errorHandler';
 setEnvVariables();
 
 const server = express();
+
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
+server.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDocs));
+
 server.use(logger('dev'));
 
 server.use(cors());
