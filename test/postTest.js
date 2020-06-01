@@ -33,6 +33,10 @@ const generatePost = () => ({
   title: faker.lorem.words(1),
   body: faker.lorem.words(5),
 });
+const genereatePostWithKnownBody = () => ({
+  title: faker.lorem.words(1),
+  body: 'a known post body with keyword',
+});
 let existingPost;
 
 const { BASE_URL } = process.env;
@@ -300,6 +304,185 @@ describe('Post Controller', () => {
       try {
         const post = await instance.get(
           `/posts/${existingPost._id}`,
+          buildAuthorizationHeader(existingUserToken),
+        );
+        assert.equal(post.status, 200);
+        assert.equal(post.data._id, existingPost._id);
+        assert.equal(post.data.title, existingPost.title);
+        assert.equal(post.data.body, existingPost.body);
+        assert.equal(post.data.author, existingPost.author);
+      } catch (err) {
+        assert.fail();
+      }
+    });
+
+    after(async () => {
+      await Post.remove({});
+    });
+  });
+
+  after(async () => {
+    await User.remove({});
+    await Post.remove({});
+  });
+
+  // Testing the get posts by author endpoint
+  describe('GET /posts/author/:author', () => {
+    before(async () => {
+      const postToCreate = {
+        ...generatePost(),
+        ...{ author: existingUser._id },
+      };
+      existingPost = await Post.create(postToCreate);
+    });
+
+    it('Should return unauthorized as no header is sent', async () => {
+      try {
+        await instance.get(`/posts/${existingPost._id}`);
+        assert.fail();
+      } catch (err) {
+        assert.equal(err.response.status, 401);
+      }
+    });
+
+    it('Should return not found as post does not exist', async () => {
+      try {
+        await instance.get(
+          `/posts/${FAKE_OBJECT_ID}`,
+          buildAuthorizationHeader(existingUserToken),
+        );
+        assert.fail();
+      } catch (err) {
+        assert.equal(err.response.status, 404);
+        assert.equal(err.response.data.message, POST_NOT_EXISTS);
+      }
+    });
+
+    it('Should return bad request as author id is invalid', async () => {
+      try {
+        const post = {
+          title: faker.lorem.words(1),
+          body: faker.lorem.words(5),
+          author: faker.random.uuid(),
+        };
+        await instance.post(
+          '/posts',
+          post,
+          buildAuthorizationHeader(existingUserToken),
+        );
+        assert.fail();
+      } catch (err) {
+        assert.equal(err.response.status, 422);
+        assert.isNotEmpty(err.response.data.errors);
+        assertHasFieldErrors(err, AUTHOR_FIELD_NAME);
+      }
+    });
+    it('Should return bad request as author does not exist', async () => {
+      try {
+        const post = {
+          title: faker.lorem.words(1),
+          body: faker.lorem.words(5),
+          author: FAKE_OBJECT_ID,
+        };
+        await instance.post(
+          '/posts',
+          post,
+          buildAuthorizationHeader(existingUserToken),
+        );
+        assert.fail();
+      } catch (err) {
+        assert.equal(err.response.status, 422);
+        assert.isNotEmpty(err.response.data.errors);
+        assertHasFieldErrors(err, AUTHOR_FIELD_NAME);
+        const invalidAuthorErr = err.response.data.errors.shift();
+        assert.equal(invalidAuthorErr.msg, USER_NOT_EXISTS);
+      }
+    });
+
+    it('Should return post by author successfully', async () => {
+      try {
+        const post = await instance.get(
+          `/posts/author/${existingPost.author}`,
+          buildAuthorizationHeader(existingUserToken),
+        );
+        assert.equal(post.status, 200);
+        assert.equal(post.data._id, existingPost._id);
+        assert.equal(post.data.title, existingPost.title);
+        assert.equal(post.data.body, existingPost.body);
+        assert.equal(post.data.author, existingPost.author);
+      } catch (err) {
+        assert.fail();
+      }
+    });
+
+    after(async () => {
+      await Post.remove({});
+    });
+  });
+
+  after(async () => {
+    await User.remove({});
+    await Post.remove({});
+  });
+
+  // Testing the get posts by keyword endpoint
+  describe('GET /posts/keyword/:keyword', () => {
+    before(async () => {
+      const postToCreate = {
+        ...genereatePostWithKnownBody(),
+        ...{ author: existingUser._id },
+      };
+      existingPost = await Post.create(postToCreate);
+    });
+
+    it('Should return unauthorized as no header is sent', async () => {
+      try {
+        await instance.get(`/posts/${existingPost._id}`);
+        assert.fail();
+      } catch (err) {
+        assert.equal(err.response.status, 401);
+      }
+    });
+
+    it('Should return not found as post does not exist', async () => {
+      try {
+        await instance.get(
+          `/posts/${FAKE_OBJECT_ID}`,
+          buildAuthorizationHeader(existingUserToken),
+        );
+        assert.fail();
+      } catch (err) {
+        assert.equal(err.response.status, 404);
+        assert.equal(err.response.data.message, POST_NOT_EXISTS);
+      }
+    });
+
+    it('Should return bad request as author does not exist', async () => {
+      try {
+        const post = {
+          title: faker.lorem.words(1),
+          body: faker.lorem.words(5),
+          author: FAKE_OBJECT_ID,
+        };
+        await instance.post(
+          '/posts',
+          post,
+          buildAuthorizationHeader(existingUserToken),
+        );
+        assert.fail();
+      } catch (err) {
+        assert.equal(err.response.status, 422);
+        assert.isNotEmpty(err.response.data.errors);
+        assertHasFieldErrors(err, AUTHOR_FIELD_NAME);
+        const invalidAuthorErr = err.response.data.errors.shift();
+        assert.equal(invalidAuthorErr.msg, USER_NOT_EXISTS);
+      }
+    });
+
+    it('Should return post by keyword successfully', async () => {
+      try {
+        const post = await instance.get(
+          '/posts/keyword/known',
           buildAuthorizationHeader(existingUserToken),
         );
         assert.equal(post.status, 200);

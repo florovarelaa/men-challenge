@@ -18,5 +18,10 @@
     "responses": {
       "POST_NOT_EXISTS": "Post does not exist"
     }
+  },
+  "comment": {
+    "validations": {
+      "CONTENT_INVALID_LENGTH": "Content length must be greater than"
+    }
   }
 }

@@ -1,38 +1,33 @@
 import mongoose from 'mongoose';
 
 const { Schema } = mongoose;
-export const MAX_TITLE_LENGTH = 20;
-export const MAX_BODY_LENGTH = 200;
+export const MAX_CONTENT_LENGTH = 200;
 
 export const TITLE_FIELD_NAME = 'title';
 export const AUTHOR_FIELD_NAME = 'author';
 export const BODY_FIELD_NAME = 'body';
 
-const PostSchema = new Schema({
-  title: {
-    type: String,
-    required: true,
-    maxlength: MAX_TITLE_LENGTH,
-  },
+const CommentSchema = new Schema({
   author: {
     type: Schema.Types.ObjectId,
     ref: 'User',
   },
-  body: {
+  post: {
+    type: Schema.Types.ObjectId,
+    ref: 'Post',
+    required: true,
+  },
+  content: {
     type: String,
     required: true,
-    maxlength: MAX_BODY_LENGTH,
+    maxlength: MAX_CONTENT_LENGTH,
   },
-  comments: [{
-    type: Schema.Types.ObjectId,
-    ref: 'Comment',
-  }],
   date: { type: Date, default: Date.now },
 });
 
-PostSchema.methods.toJSON = function () {
+CommentSchema.methods.toJSON = function () {
   const user = this.toObject({ versionKey: false });
   return user;
 };
 
-export default mongoose.model('Post', PostSchema);
+export default mongoose.model('Comment', CommentSchema);
